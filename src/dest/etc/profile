@@ -1,0 +1,36 @@
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+export PATH
+
+TZ="GMT"
+export TZ
+
+# preferred locale
+locale="en_US.UTF-8"
+
+if [ -x /mnt/DroboFS/Shares/DroboApps/locale/bin/locale ]; then
+  LANG=$locale
+  LC_ALL=$locale
+  export LANG LC_ALL
+fi
+
+if [ -f /mnt/DroboFS/Shares/DroboApps/bash/etc/inputrc ]; then
+  export INPUTRC=/mnt/DroboFS/Shares/DroboApps/bash/etc/inputrc
+fi
+
+if [ "$PS1" ]; then
+  if [ "$BASH" ] && [ "$BASH" != "/bin/sh" ]; then
+    if [ -f /mnt/DroboFS/Shares/DroboApps/bash/etc/bash.bashrc ]; then
+      . /mnt/DroboFS/Shares/DroboApps/bash/etc/bash.bashrc
+    fi
+  else
+    if [ "`id -u`" -eq 0 ]; then
+      PS1='# '
+    else
+      PS1='$ '
+    fi
+  fi
+fi
+
+if [ -f /mnt/DroboFS/Shares/DroboApps/bash/etc/droboapps.profile ]; then
+  . /mnt/DroboFS/Shares/DroboApps/bash/etc/droboapps.profile
+fi
