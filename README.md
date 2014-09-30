@@ -7,6 +7,10 @@ This is a set of scripts to package a DroboApp from scratch, i.e., download sour
 
 Check the [releases](https://github.com/droboports/bash/releases) page. If there are no releases available, then you have to compile.
 
+Once installed, please replace the original `bash` binary by logging in and typing:
+
+`cp /mnt/DroboFS/Shares/DroboApps/bash/bin/bash /bin/bash`
+
 ## How to compile
 
 First make sure that you have a working cross-compiling VM. See http://www.droboports.com/setting-up-a-vm for a step-by-step description.
