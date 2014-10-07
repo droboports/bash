@@ -11,6 +11,15 @@ Once installed, please replace the original `bash` binary by logging in and typi
 
 `cp /mnt/DroboFS/Shares/DroboApps/bash/bin/bash /bin/bash`
 
+You can also install some default configuration files by doing:
+
+```
+mv /etc/profile /etc/profile.orig
+ln -s /mnt/DroboFS/Shares/DroboApps/bash/etc/profile /etc/profile
+cp /mnt/DroboFS/Shares/DroboApps/bash/etc/skel/bashrc ~/.bashrc
+cp /mnt/DroboFS/Shares/DroboApps/bash/etc/skel/profile ~/.profile
+```
+
 ## How to compile
 
 First make sure that you have a working cross-compiling VM. See http://www.droboports.com/setting-up-a-vm for a step-by-step description.
