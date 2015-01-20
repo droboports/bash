@@ -21,95 +21,125 @@ exec 1> >(tee -a "${logfile}")
 # redirect errors to stdout
 exec 2> >(tee -a "${logfile}" >&2)
 
-### environment variables ###
+### environment setup ###
 source crosscompile.sh
-export NAME="bash"
+export NAME="$(basename ${PWD})"
 export DEST="/mnt/DroboFS/Shares/DroboApps/${NAME}"
 export DEPS="${PWD}/target/install"
-export XDEST=~/xtools/python2
-#export CFLAGS="$CFLAGS -Os -fPIC -ffunction-sections -fdata-sections"
-export CFLAGS="$CFLAGS -Os"
-export CXXFLAGS="$CXXFLAGS $CFLAGS"
-#export CPPFLAGS="-I${DEPS}/include"
-#export LDFLAGS="${LDFLAGS:-} -Wl,-rpath,${DEST}/lib -L${DEST}/lib"
-export PKG_CONFIG_LIBDIR="${DEST}/lib/pkgconfig"
+export CFLAGS="${CFLAGS:-} -Os -fPIC"
+export CXXFLAGS="${CXXFLAGS:-} ${CFLAGS}"
+export CPPFLAGS="-I${DEPS}/include"
+export LDFLAGS="${LDFLAGS:-} -Wl,-rpath,${DEST}/lib -L${DEST}/lib"
 alias make="make -j8 V=1 VERBOSE=1"
 
+### support functions ###
+# Download a TGZ file and unpack it, removing old files.
 # $1: file
 # $2: url
 # $3: folder
 _download_tgz() {
+  [[ ! -d "download" ]]      && mkdir -p "download"
+  [[ ! -d "target" ]]        && mkdir -p "target"
   [[ ! -f "download/${1}" ]] && wget -O "download/${1}" "${2}"
-  [[ -d "target/${3}" ]] && rm -v -fr "target/${3}"
-  [[ ! -d "target/${3}" ]] && tar -zxvf "download/${1}" -C target
+  [[   -d "target/${3}" ]]   && rm -vfr "target/${3}"
+  [[ ! -d "target/${3}" ]]   && tar -zxvf "download/${1}" -C target
+  return 0
 }
 
-### BASH ###
-_build_bash() {
-local VERSION="4.3"
-local FOLDER="bash-${VERSION}"
-local FILE="${FOLDER}.tar.gz"
-local URL="http://ftp.gnu.org/gnu/bash/${FILE}"
-
-_download_tgz "${FILE}" "${URL}" "${FOLDER}"
-for n in {001..030}; do
-  if [[ ! -f "${PWD}/download/bash-${VERSION}-${n}.patch" ]]; then
-    wget -O "${PWD}/download/bash-${VERSION}-${n}.patch" "http://ftp.gnu.org/gnu/bash/bash-4.3-patches/bash43-${n}"
-  fi
-done
-
-for f in ${PWD}/download/bash-${VERSION}-*.patch; do
-  pushd "target/${FOLDER}"
-  echo "${f}"
-  patch -p0 < "${f}"
-  popd
-done
-
-pushd "target/${FOLDER}"
-./configure --host=arm-none-linux-gnueabi --prefix="${DEST}"
-# LDFLAGS="$LDFLAGS -Wl,--gc-sections"
-make
-make install
-"${STRIP}" --strip-all -R .comment -R .note -R .note.ABI-tag "${DEST}/bin/bash"
-popd
+# Download a TGZ file and unpack it, removing old files.
+# $1: file
+# $2: url
+# $3: folder
+_download_xz() {
+  [[ ! -d "download" ]]      && mkdir -p "download"
+  [[ ! -d "target" ]]        && mkdir -p "target"
+  [[ ! -f "download/${1}" ]] && wget -O "download/${1}" "${2}"
+  [[   -d "target/${3}" ]]   && rm -vfr "target/${3}"
+  [[ ! -d "target/${3}" ]]   && tar -Jxvf "download/${1}" -C target
+  return 0
 }
 
-### BUILD ###
-_build() {
-  _build_bash
-  _package
+# Download a DroboApp and unpack it, removing old files.
+# $1: file
+# $2: url
+# $3: folder
+_download_app() {
+  [[ ! -d "download" ]]      && mkdir -p "download"
+  [[ ! -d "target" ]]        && mkdir -p "target"
+  [[ ! -f "download/${1}" ]] && wget -O "download/${1}" "${2}"
+  [[   -d "target/${3}" ]]   && rm -vfr "target/${3}"
+  mkdir -p "target/${3}"
+  tar -zxvf "download/${1}" -C "target/${3}"
+  return 0
 }
 
+# Clone last commit of a single branch from git, removing old files.
+# $1: branch
+# $2: folder
+# $3: url
+_download_git() {
+  [[ ! -d "target" ]]        && mkdir -p "target"
+  [[   -d "target/${2}" ]]   && rm -vfr "target/${2}"
+  [[ ! -d "target/${2}" ]]   && git clone --branch "${1}" --single-branch --depth 1 "${3}" "target/${2}"
+  return 0
+}
+
+# Download a file, overwriting existing.
+# $1: file
+# $2: url
+_download_file() {
+  [[ ! -d "download" ]]      && mkdir -p "download"
+  [[ ! -f "download/${1}" ]] && wget -O "download/${1}" "${2}"
+  return 0
+}
+
+# Download a file in a specific folder, overwriting existing.
+# $1: file
+# $2: url
+# $3: folder
+_download_file_in_folder() {
+  [[ ! -d "download/${3}" ]]      && mkdir -p "download/${3}"
+  [[ ! -f "download/${3}/${1}" ]] && wget -O "download/${3}/${1}" "${2}"
+  return 0
+}
+
+# Create the DroboApp tgz file.
 _create_tgz() {
-  local appname="$(basename ${PWD})"
-  local appfile="${PWD}/${appname}.tgz"
+  local FILE="${PWD}/${NAME}.tgz"
 
-  if [[ -f "${appfile}" ]]; then
-    rm -v "${appfile}"
+  if [[ -f "${FILE}" ]]; then
+    rm -v "${FILE}"
   fi
 
   pushd "${DEST}"
-  tar --verbose --create --numeric-owner --owner=0 --group=0 --gzip --file "${appfile}" *
+  tar --verbose --create --numeric-owner --owner=0 --group=0 --gzip --file "${FILE}" *
   popd
 }
 
+# Package the DroboApp
 _package() {
-  cp -v -aR src/dest/* "${DEST}"/
+  mkdir -p "${DEST}"
+  [[ -d "src/dest" ]] && cp -vafR "src/dest"/* "${DEST}"/
   find "${DEST}" -name "._*" -print -delete
   _create_tgz
 }
 
+# Remove all compiled files.
 _clean() {
-  rm -v -fr "${DEPS}"
-  rm -v -fr "${DEST}"
-  rm -v -fr target/*
+  rm -vfr "${DEPS}"
+  rm -vfr "${DEST}"
+  rm -vfr target/*
 }
 
+# Removes all files created during the build.
 _dist_clean() {
   _clean
-  rm -v -f logfile*
-  rm -v -fr download/*
+  rm -vf logfile*
+  rm -vfr download/*
 }
+
+### application-specific functions ###
+source app.sh
 
 case "${1:-}" in
   clean)     _clean ;;
