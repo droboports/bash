@@ -1,5 +1,5 @@
 # Add all DroboApps to the proper environment variables
-DROBOAPPS=/mnt/DroboFS/Shares/DroboApps
+export DROBOAPPS=/mnt/DroboFS/Shares/DroboApps
 
 for APP in ${DROBOAPPS}/*; do
   if [ -d "$APP/bin" ]; then
@@ -19,8 +19,3 @@ for APP in ${DROBOAPPS}/*; do
 #    fi
 #  fi
 done
-
-# Add a "service" function
-service() {
-  $DROBOAPPS/$1/service.sh $2
-}

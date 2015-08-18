@@ -1,7 +1,7 @@
-if [ -n "$BASH_VERSION" -a -f "$HOME/.bashrc" ]; then
-  . "$HOME/.bashrc"
+if [ -n "${BASH_VERSION}"] && [ -f "${HOME}/.bashrc" ]; then
+  . "${HOME}/.bashrc"
 fi
 
-if [ -d "$HOME/bin" ] ; then
-  export PATH="$HOME/bin:$PATH"
+if [ -d "${HOME}/bin" ] ; then
+  export PATH="${HOME}/bin:${PATH}"
 fi
