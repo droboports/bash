@@ -8,7 +8,7 @@
 framework_version="2.1"
 name="bash"
 version="4.3.42"
-description="Bourne Again Shell version 4.3.42"
+description="Bourne Again Shell"
 depends=""
 webui=""
 
