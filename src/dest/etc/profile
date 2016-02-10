@@ -1,36 +1,45 @@
-PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-export PATH
+export PATH=/sbin:/usr/sbin:/bin:/usr/bin
+export LANG=C
+export LC_ALL=C
+export INPUTRC=/etc/inputrc
+export DROBOAPPS_DIR="/mnt/DroboFS/Shares/DroboApps"
 
-TZ="GMT"
-export TZ
+alias ls='/bin/ls --color=auto -F'
+alias ll='/bin/ls --color=auto -laFh'
+alias lf='/bin/ls --color=auto -Fx'
+alias la='/bin/ls --color=auto -Fax'
+alias l='/bin/ls --color=auto -la'
 
-# preferred locale
-locale="en_US.UTF-8"
+# Add a "service" function
+service() {
+  local appname=$1
+  shift
+  if [ "$(/usr/bin/id -u)" -ne 0 ]; then
+    echo "ERROR: You must be root to run this command." >&2
+    return 1
+  fi
+  if [ -z "${appname}" ]; then
+    echo "Please provide a DroboApp name." >&2
+    return 1
+  fi
+  "$DROBOAPPS_DIR/$appname/service.sh" "$@"
+}
 
-if [ -x /mnt/DroboFS/Shares/DroboApps/locale/bin/locale ]; then
-  LANG=$locale
-  LC_ALL=$locale
-  export LANG LC_ALL
-fi
-
-if [ -f /mnt/DroboFS/Shares/DroboApps/bash/etc/inputrc ]; then
-  export INPUTRC=/mnt/DroboFS/Shares/DroboApps/bash/etc/inputrc
-fi
-
+# If running interactively, then:
 if [ "$PS1" ]; then
-  if [ "$BASH" ] && [ "$BASH" != "/bin/sh" ]; then
-    if [ -f /mnt/DroboFS/Shares/DroboApps/bash/etc/bash.bashrc ]; then
-      . /mnt/DroboFS/Shares/DroboApps/bash/etc/bash.bashrc
-    fi
+  if [ "$BASH" ] && [ "$BASH" != "/bin/sh" ] && [ -f /etc/bash.bashrc ]; then
+    . /etc/bash.bashrc
   else
-    if [ "`id -u`" -eq 0 ]; then
-      PS1='# '
+    case "$TERM" in
+      xterm-color) color_prompt=yes ;;
+    esac
+
+    if [ "$color_prompt" = yes ]; then
+      unset color_prompt
+      export PS1='\[\033[$(/usr/bin/esa_color.sh)m\]\h\[\033[0m\]:\w \$ '
     else
-      PS1='$ '
+      export PS1='\h:\w \$ '
     fi
   fi
-fi
+fi;
 
-if [ -f /mnt/DroboFS/Shares/DroboApps/bash/etc/droboapps.profile ]; then
-  . /mnt/DroboFS/Shares/DroboApps/bash/etc/droboapps.profile
-fi
